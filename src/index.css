@@ -11,3 +11,28 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+
+.sketch-picker{
+  z-index: 2;
+  position: fixed;
+}
+
+.navdiv{
+ background-color: #a7bbc7;
+  display: flex;
+  padding: 10px;
+ 
+}
+
+.btns{
+  margin-left: 40px;
+}
+
+.canva{
+ 
+  display: block;
+  position:fixed;
+  top:40px
+}
+
