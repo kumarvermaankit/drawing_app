@@ -81,6 +81,7 @@ function Strokesetter(color){
 
   Contextref.current.strokeStyle=`${color.hex}`
   setstrk(color.hex)
+  seteraser(false)
 }
 
 function Eraser(){
