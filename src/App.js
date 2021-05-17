@@ -239,6 +239,8 @@ function Backgroundsetter(color){
       backgroundColor:color.hex
     }
   })
+  Contextref.current.fillRect(0,0,Canvasref.current.width,Canvasref.current.height);
+  Contextref.current.fillStyle=`${color.hex}`
 }
 
 function Strokeclr(event){
