@@ -9,7 +9,7 @@ let socket;
 function App() {
 
 
-const ENDPOINT="http://localhost:5000"
+const ENDPOINT="https://cyduckdraw.herokuapp.com/"
 var i=0;
 const Canvasref=useRef(null);
 const Contextref=useRef(null)
