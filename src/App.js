@@ -2,10 +2,20 @@ import React,{useEffect, useRef, useState} from "react"
 import { SketchPicker } from 'react-color';
 import erase from "./erase.png"
 
+import io from "socket.io-client"
+
+
+let socket;
 function App() {
 
+
+const ENDPOINT="http://localhost:5000"
+var i=0;
 const Canvasref=useRef(null);
 const Contextref=useRef(null)
+
+
+const [currentpoint,setcurrentpoint]=useState({})
 
 const [isDrawing,setisDrawing]=useState(false)
 const [bgstate,setbgstate]=useState(false)
@@ -13,8 +23,18 @@ const [bgclr,setbgclr]=useState("#3d84b8")
 const [strkstate,setstrkstate]=useState(false);
 const [strk,setstrk]=useState("black");
 const [eraser,seteraser]=useState(false)
-const [prevstroke,setprevstroke]=useState("")
+var prevstroke=""
 const [cursor,setcursor]=useState("")
+
+
+
+
+const [user,setuser]=useState({
+  backgroundColor:bgclr,
+  strokeColor:strk,
+  locX:0,
+  locY:0,
+})
 
 useEffect(()=>{
 
@@ -38,38 +58,188 @@ Contextref.current=context
 
 },[])
 
+
+useEffect(()=>{
+
+socket=io(ENDPOINT)
+socket.emit("join",user,()=>{
+ 
+
+})
+
+// socket.on("drawinfo",(val)=>{
+
+//   console.log(val)
+// setotherusers(val)
+
+
+// })
+
+socket.on("drawuser",(data)=>{
+  Ondrawing(data)
+})
+
+
+
+return ()=>{
+  // socket.emit("disconnect");
+  socket.off();
+}
+},[ENDPOINT])
+
+
+
+// useEffect(()=>{
+
+//   socket.on("drawinfo",(val)=>{
+//     console.log(val)
+//     setotherusers(val)
+//   })
+
+// },[otherusers])
+
+
+function drawothers(data){
+
+  
+ 
+
+if(data.state==="down"){
+  Contextref.current.beginPath();
+  Contextref.current.moveTo(data.x,data.y)
+}
+else if(data.state==="up"){
+  Contextref.current.closePath();
+}
+
+else if(data.state==="draw"){
+  Contextref.current.lineTo(data.x,data.y);
+  Contextref.current.stroke()
+}
+else if(data.state==="clear"){
+  Contextref.current.clearRect(0,0,Canvasref.current.width,Canvasref.current.height);
+}
+else if(data.state==="eraser"){
+  Eraser(data.erase,data.prev)
+}
+
+else if(data.state="stroke"){
+Strokesetter(data.color)
+}
+
+
+
+ 
+
+  
+}
+
+
+
+
 function Startdrawing(nativeEvent){
  
+
 const {offsetX,offsetY}=nativeEvent.nativeEvent;
+user.locX=offsetX
+user.locY=offsetY
 Contextref.current.beginPath();
 Contextref.current.moveTo(offsetX,offsetY)
+currentpoint.x=offsetX
+currentpoint.y=offsetY
 setisDrawing(true)
+
+socket.emit("draw",({state:"down",x:offsetX,y:offsetY}))
+
 }
 
-function finishdrawing(){
- 
-Contextref.current.closePath()
+function finishdrawing(nativeEvent){
+  Contextref.current.closePath();
+// draw(currentpoint.x,currentpoint.y,nativeEvent.nativeEvent.clentX,nativeEvent.nativeEvent.clentY)
+
+const {offsetX,offsetY}=nativeEvent.nativeEvent
+
+  // drawothers(currentpoint.x,currentpoint.y,offsetX,offsetY)
+  // draw(nativeEvent)
+
+currentpoint.x=offsetX
+currentpoint.y=offsetY
+
+socket.emit("draw",({state:"up",x:offsetX,y:offsetY}))
 setisDrawing(false)
 
+
+
 }
 
-function draw(nativeEvent){
-if(!isDrawing){
-  return;
+function Ondrawing(data){
+
+const w=Canvasref.current.width
+const h=Canvasref.current.height
+
+drawothers(data)
+
 }
+
+
+function draw(nativeEvent){
+
+
+
+
+
   const {offsetX,offsetY}=nativeEvent.nativeEvent;
+
+
+
+
+
+
+//   setuser((prev)=>{
+// return{
+//   ...prev,
+//   locX:offsetX,
+//   locY:offsetY
+// }
+//   })
+
 
   Contextref.current.lineTo(offsetX,offsetY);
   Contextref.current.stroke()
 
+ 
+  
+  socket.emit("draw",{state:"draw",x:offsetX,y:offsetY})
+}
 
+
+function MouseMove(nativeEvent){
+  if(!isDrawing){
+    return;
+  }
+
+  draw(nativeEvent)
 }
 
 function BGC(event){
   event.preventDefault();
 
   bgstate?setbgstate(false):setbgstate(true)
+  
 } 
+
+
+
+
+function Backgroundsetter(color){
+  setbgclr(color.hex)
+  setuser((prev)=>{
+    return{
+      ...prev,
+      backgroundColor:color.hex
+    }
+  })
+}
 
 function Strokeclr(event){
 event.preventDefault();
@@ -77,39 +247,71 @@ event.preventDefault();
 strkstate?setstrkstate(false):setstrkstate(true)
 }
 
+function StrokeChange(color){
+  Strokesetter(color)
+  socket.emit("draw",{state:"stroke",color:color})
+}
+
 function Strokesetter(color){
 
   Contextref.current.strokeStyle=`${color.hex}`
   setstrk(color.hex)
-  seteraser(false)
+  seteraser(true)
+
+  // setuser((prev)=>{
+  //   return{
+  //     ...prev,
+  //     strokeColor:color.hex
+  //   }
+  // })
+
+ 
+
 }
 
-function Eraser(){
-eraser?seteraser(false):seteraser(true);
+function OnErase(eraser){
+  prevstroke=strk
+ 
+  Eraser(eraser,prevstroke)
+
+  socket.emit("draw",{state:"eraser",erase:eraser,prev:prevstroke})
+}
+
+function Eraser(eraser,prev){
+
 eraser===false?setcursor(erase):setcursor("")
 
+
 if(eraser===false){
+
    Contextref.current.lineWidth=20;
+  
+   Contextref.current.strokeStyle=`${bgclr}`
 }
 else if(eraser===true){
+  
   Contextref.current.lineWidth=7;
+  Contextref.current.strokeStyle=`${prev}`
 }
 
 
-if(eraser===false){
- setprevstroke(strk)
-  Contextref.current.strokeStyle=`${bgclr}`
-}
-else if(eraser===true){
-  Contextref.current.strokeStyle=`${prevstroke}`
-}
+
+
+eraser?seteraser(false):seteraser(true)
+
 }
 
 
-function Clear(event){
+function Clear(event,state){
 event.preventDefault();
 
   Contextref.current.clearRect(0,0,Canvasref.current.width,Canvasref.current.height);
+
+if(state==="all"){
+  socket.emit("draw",{state:"clear"})
+}
+
+
   
 }
 
@@ -118,26 +320,35 @@ event.preventDefault();
  <div className="navdiv">
  <div>
  <button className="btns" onClick={(event)=>BGC(event)}>Background Color</button>
-{bgstate?<SketchPicker id="bgcolor" color={`${bgclr}`}  onChange={(color)=>setbgclr(color.hex)}/>:null}
+{bgstate?<SketchPicker id="bgcolor" color={`${bgclr}`}  onChange={(color)=>Backgroundsetter(color)}/>:null}
 </div>
 <div>
 <button className="btns" onClick={(event)=>Strokeclr(event)}>Stroke Color</button>
-{strkstate?<SketchPicker id="strokecolor"  color={`${strk}`}  onChange={(clr)=>Strokesetter(clr)}/>:null}
+{strkstate?<SketchPicker id="strokecolor"  color={`${strk}`}  onChange={(clr)=>StrokeChange(clr)}/>:null}
 </div>
 <div>
-<button className="btns" onClick={(event)=>Eraser(event)}>Eraser</button>
+<button className="btns" onClick={()=>OnErase(eraser)}>Eraser</button>
 
 </div>
-<button className="btns" onClick={(event)=>Clear(event)}>Clear</button>
+<button className="btns" onClick={(event)=>Clear(event,"self")}>Clear</button>
+<button className="btns" onClick={(event)=>Clear(event,"all")}>Clear for everyone</button>
 </div>
+
+
+
  <canvas className="canva" style={{backgroundColor:`${bgclr}`,cursor:`url(${cursor}),auto`} }
 onMouseDown={Startdrawing}
 onMouseUp={finishdrawing}
-onMouseMove={draw}
+onMouseMove={MouseMove}
 ref={Canvasref}
 
 
  />
+
+
+
+
+ 
  
  </div>    
   );
