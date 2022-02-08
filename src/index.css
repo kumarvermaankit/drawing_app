@@ -1,38 +1,64 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  height: 1000px;
+  overflow-y: scroll;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
 
-
-.sketch-picker{
+.sketch-picker {
   z-index: 2;
   position: fixed;
 }
 
-.navdiv{
- background-color: #a7bbc7;
+.navdiv {
+  background-color: #a7bbc7;
   display: flex;
-  padding: 10px;
- 
 }
 
-.btns{
+.btns {
   margin-left: 40px;
 }
 
-.canva{
- 
+/* .canva {
   display: block;
-  position:fixed;
-  top:40px
+  position: fixed;
+  top: 40px;
+} */
+.single1 {
+  width: 768px;
+  height: 500px;
+  margin-top: 5px;
 }
 
+.single2 {
+  width: 768px;
+  height: 500px;
+  position: relative;
+  left: 770px;
+  bottom: 500px;
+}
+
+.single3 {
+  width: 768px;
+  height: 500px;
+  position: relative;
+
+  bottom: 565px;
+}
+
+.single4 {
+  width: 768px;
+  height: 500px;
+  position: relative;
+  left: 770px;
+  bottom: 1065px;
+}
